@@ -1,11 +1,11 @@
-## SETUP YUM REPO DIRECTORIES FOR MGT SERVERS
-## DEPENDENT ON NGINX MODULE / SETUP
+# Setup yum repo directories for yum repo server
+# Dependencies: NGINX or use ''python -m SimpleHTTPServer 80 2>&1 nohup &''
 
-class yumrepo(
+class yumrepo-builder(
   $repo_user  = 'root',
   $repo_group = 'root',
   $repo_dir   = '/usr/share/nginx/html/CentOS',
-  $os_ver     = '6.4',){
+  $os_ver     = '6.5',){
 
 # Install pacakages to manage repo
   package { 'createrepo':
@@ -13,7 +13,7 @@ class yumrepo(
 	     'createrepo',
 	     'rpmbuild',
 	   ]:
-      	     ensure => installed;
+      	     ensure => latest,
   }
 
 # Setup yum repo directories
@@ -34,52 +34,51 @@ class yumrepo(
       	  owner   => $repo_user,
       	  group   => $repo_group,
       	  mode    => '0755',
-      	  require => Class['nginx'];
-    }
+  }
 
-## CREATE DIRECTORY
-file { '/root/scripts':
+# Create staged directory
+  file { '/root/scripts':
 	ensure  => directory,
         owner   => $repo_user,
         group   => $repo_group,
         mode    => '0700',
 	require => Class['nginx'];
-     }
+  }
 
-## CREATE DIRECTORY
-file { '/root/scripts/configs':
+# Create staged directory
+  file { '/root/scripts/configs':
         ensure  => directory,
         owner   => $repo_user,
         group   => $repo_group,
         mode    => '0700',
         require => File['/root/scripts'];
-     }
+  }
 
-## PUSH SCRIPT TO MGT SERVER
-file { '/root/scripts/rm_repo_packages.sh':
+# Push remove package script to yum repo server
+  file { '/root/scripts/rm_repo_packages.sh':
         ensure  => present,
         owner   => $repo_user,
         group   => $repo_group,
         mode    => '0700',
-	source  => 'puppet:///modules/yumrepo/rm_repo_packages.sh',
+	source  => 'puppet:///modules/yumrepo-builder/rm_repo_packages.sh',
 	require => File['/root/scripts'];
-     }
+  }
 
-## PUSH RPM REMOVE LIST TO MGT SERVER
-file { '/root/scripts/configs/rm_list':
+# Push package remove list to yum repo server
+  file { '/root/scripts/configs/rm_list':
         ensure  => present,
         owner   => $repo_user,
         group   => $repo_group,
         mode    => '0600',
-        source  => 'puppet:///modules/yumrepo/rm_list',
+        source  => 'puppet:///modules/yumrepo-builder/rm_list',
         require => File['/root/scripts/configs'];
-     }
+   }
 
-## EXECUTE SCRIPT TO REMOVE UNWANTED PACKAGES
-exec {'rm_repo_packages.sh':
-	command => '/root/randomz/rm_repo_packages.sh',
+# Execute script to remove unwanted packages
+  exec {'rm_repo_packages.sh':
+	command => '/root/scripts/rm_repo_packages.sh',
 	user	=> $repo_user,
-	require => File['/root/randomz/configs/rm_list'];
-     }
+	require => File['/root/scripts/configs/rm_list'];
+  }
 
 }

@@ -1,13 +1,6 @@
 #!/bin/bash
-############################################
-## CREATED BY TIM SKI | MARSHYSKI(DOT)COM ##
-## MARSHYSKI[AT]GMAIL[DOT]COM             ##
-## CLEAN UNWANTED YUM REPO PACKAGES       ##
-## 18MAY2013                              ##
-## TESTED ON RHEL 5-6                     ##
-############################################
 
-RM_LIST="/root/randomz/configs/rm_list"
+RM_LIST="/root/scripts/configs/rm_list"
 REPO="/usr/share/nginx/html/CentOS"
 
 if [[ ! -d $REPO ]]; then
