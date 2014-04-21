@@ -42,7 +42,6 @@ class yumrepo-builder(
         owner   => $repo_user,
         group   => $repo_group,
         mode    => '0700',
-	require => Class['nginx'];
   }
 
 # Create staged directory
@@ -51,7 +50,7 @@ class yumrepo-builder(
         owner   => $repo_user,
         group   => $repo_group,
         mode    => '0700',
-        require => File['/root/scripts'];
+        require => File['/root/scripts'],
   }
 
 # Push remove package script to yum repo server
@@ -61,7 +60,7 @@ class yumrepo-builder(
         group   => $repo_group,
         mode    => '0700',
 	source  => 'puppet:///modules/yumrepo-builder/rm_repo_packages.sh',
-	require => File['/root/scripts'];
+	require => File['/root/scripts'],
   }
 
 # Push package remove list to yum repo server
@@ -71,14 +70,46 @@ class yumrepo-builder(
         group   => $repo_group,
         mode    => '0600',
         source  => 'puppet:///modules/yumrepo-builder/rm_list',
-        require => File['/root/scripts/configs'];
+        require => File['/root/scripts/configs'],
+   }
+
+# Push package remove list to yum repo server
+  file { '/root/scripts/update_repo.sh':
+        ensure  => present,
+        owner   => $repo_user,
+        group   => $repo_group,
+        mode    => '0700',
+        source  => 'puppet:///modules/yumrepo-builder/update_repo.sh',
+        require => File['/root/scripts'],
+   }
+
+# Push package remove list to yum repo server
+  file { '/root/scripts/createrepo.sh':
+        ensure  => present,
+        owner   => $repo_user,
+        group   => $repo_group,
+        mode    => '0700',
+        source  => 'puppet:///modules/yumrepo-builder/createrepo.sh',
+        require => File['/root/scripts'],
    }
 
 # Execute script to remove unwanted packages
   exec {'rm_repo_packages.sh':
 	command => '/root/scripts/rm_repo_packages.sh',
 	user	=> $repo_user,
-	require => File['/root/scripts/configs/rm_list'];
+	require => Cron['yumsync'],
+  }
+
+# Crontab for updating the repo first monday of the month
+  cron { 'yumsync':
+        command  => '/root/scripts/update_repo.sh && /root/scripts/createrepo.sh',
+        user     => root,
+	weekday  => '01',
+	month    => '*',
+	monthday => '1-7',
+        hour     => '00',
+        minute   => '00',
+        require  => [File['/root/scripts/update_repo.sh'],File['/root/scripts/createrepo.sh']];
   }
 
 }
