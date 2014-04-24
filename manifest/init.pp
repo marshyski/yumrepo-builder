@@ -8,10 +8,11 @@ class yumrepo-builder(
   $os_ver     = '6.5',){
 
 # Install pacakages to manage repo
-  package { 'createrepo':
+  package {
            [
 	     'createrepo',
 	     'rpmbuild',
+             'yum-downloadonly',
 	   ]:
       	     ensure => latest,
   }
